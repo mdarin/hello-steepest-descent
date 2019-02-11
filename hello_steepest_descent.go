@@ -11,9 +11,10 @@ import(
 )
 
 /*
+	
   __
-  \/F - оператор набла nabla F
-  или другое обозначение grad F
+	\/F - оператор набла nabla F
+	или другое обозначение grad F
 
 
   Градиентный спуск
@@ -61,22 +62,24 @@ func main() {
 	var x float64 = 34.0
 	var y float64 = 12.0
 	var epsilon = 0.01
-  SteepestDescent(x, y, epsilon)
+	SteepestDescent(x, y, epsilon)
 }
 
 // Собственно здесь записывается наша функция
 func f(x,y float64) float64 {
 	//TODO: здеась можно задать исследуемею функцию или поиграться с этой
 	//NOTE: если поменяете функцию не забудьте про частные производные
-  return x*x + 2.0*x*y + 3.0*y*y - 2.0*x -3.0*y
+	return x*x + 2.0*x*y + 3.0*y*y - 2.0*x -3.0*y
 }
 
+//
+// операция grad или nabla
+//
 // Это первая производная по dx
 // частная производная по х
 func f_dx(x, y float64) float64 {
 	return 2.0*x + 2.0*y - 2.0
 }
-
 // Это первая производная по dy
 // частная производная по y
 func f_dy(x, y float64) float64 {
@@ -85,7 +88,6 @@ func f_dy(x, y float64) float64 {
 
 
 // Это функция g в методе наискорейшего (градиентного) спуска
-// операция grad или nabla
 func g(x, y, lambda float64) float64 {
 	//	Шаг 1. (продолжение)
 	//		Найти градиент функции в произвольной точке. Определить частные производные функции f(x):
@@ -97,7 +99,7 @@ func g(x, y, lambda float64) float64 {
 // двумерная норма
 // условие остановки
 func norma(x, y float64) float64 {
-    return math.Sqrt(x*x + y*y)
+	return math.Sqrt(x*x + y*y)
 }
 
 
@@ -140,9 +142,9 @@ func dichotomia(a0, b0, epsilon, x, y float64) float64 {
 	}
 
 	// minimum point
-  x_min = (ak + bk) / 2.0
+	x_min = (ak + bk) / 2.0
 
-  return x_min;
+	return x_min;
 }
 
 
@@ -171,9 +173,9 @@ func SteepestDescent(x0, y0, epsilon float64) float64 {
 	fmt.Println()
 	fmt.Println("## Приближения:")
 	//Шаг 2. Положить k = 0
-  stop := false
+	stop := false
 	for k = 0; k < MAXITERATIONS && !stop ; k++ {
-    // П.2. Рассчитывают vec x[k+1] = vec x[k] - lambda[k] * nabla F(vec x[k]), 
+		// П.2. Рассчитывают vec x[k+1] = vec x[k] - lambda[k] * nabla F(vec x[k]), 
 		// где lambda[k]= argmin_lambda F(vec x[k] - lambda * nabla F(vec x[k]))
 		//	Шаг 3. Вычислить grad f(x[k]).
 		//
@@ -191,11 +193,11 @@ func SteepestDescent(x0, y0, epsilon float64) float64 {
 		// 
 		argmin := dichotomia
 		// Находим lambda[k] как минимум функции g на отрезке -10000,100000
-    lambda = argmin(-10000, 100000, epsilon, x_cur, y_cur);
+		lambda = argmin(-10000, 100000, epsilon, x_cur, y_cur);
 		// Вычисляем u[k] новое прилижение
 		// 	Шаг 7. Вычислить x[k+1] = x[k] - lambda[k] * grad f(x[k])
 		x_next = x_cur - lambda * f_dx(x_cur, y_cur)
-    y_next = y_cur - lambda * f_dy(x_cur, y_cur)
+		y_next = y_cur - lambda * f_dy(x_cur, y_cur)
 
 		fmt.Println()
 		fmt.Printf("  x[%d]: (%.2f, %.2f)\n", k+1, x_next, y_next)
@@ -220,13 +222,13 @@ func SteepestDescent(x0, y0, epsilon float64) float64 {
 
 		x_cur = x_next
 		y_cur = y_next
-  }
+	}
 
 	fmt.Println()
 	fmt.Println("## Точка минимума epsilon:", epsilon)
 	fmt.Printf("   f(%.2f , %.2f) = %.2f\n", x_cur, y_cur, f(x_cur, y_cur))
 
-  // получить минимум фуркции
+	// получить минимум функции
 	return f(x_cur, y_cur)
 }
 
