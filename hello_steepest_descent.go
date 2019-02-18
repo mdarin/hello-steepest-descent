@@ -69,6 +69,7 @@ type Mydatainterface interface {
 	SetX(args []float64)
 	// значение фукнции
 	SetY(float64)
+	GetY() float64
 	// градиет функции - вектор частных производных
 	Grad() []float64
 	// отрезок для поиска минимума методом одной оптимизации
@@ -120,6 +121,10 @@ func (md *Mydata) SetX(args []float64) {
 
 func (md *Mydata) SetY(y float64) {
 	md.y = y
+}
+
+func (md *Mydata) GetY() float64 {
+	return md.y
 }
 
 func (md *Mydata) GetEpsilon() float64 { return 0.01 }
@@ -190,21 +195,32 @@ func (md *Mydata) GetF() (func(data OMInterface) float64) {
 //
 func main() {
 	fmt.Println("Hello steepest descent")
+	// совсем простой пример
 	//TODO: эти значения можно менять и наблюдать результат
 	var x float64 = 34.0
 	var y float64 = 12.0
 	var epsilon = 0.01
-    SteepestDescent(x, y, epsilon)
+  SteepestDescent(x, y, epsilon)
 
+	// уже посложней с функциями-аргументами
 	fn := func (args []float64) float64 {
 		//return x[0]*x[0] + 23.0*x[0]
 		return args[0]*args[0] + 2.0*args[0]*args[1] + 3.0*args[1]*args[1] - 2.0*args[0]-3.0*args[1]
 	}
 	SteepestDescent2(fn, []float64{x,y}, epsilon)
+	fmt.Println()
 
+	// здесь уже использованы интерфейсы и фунции высшего порядка
+	// не понятно, сложно или всё же универсально вышло?
 	mydata := New(2)
 	mydata.SetX([]float64{x,y})
 	SteepestDescent3(mydata)
+	fmt.Printf("## x: ")
+	for _,x := range mydata.GetX() {
+		fmt.Printf(" %.3f", x)
+	}
+	fmt.Println()
+	fmt.Printf("## y: %.3f\n", mydata.GetY())
 }
 
 // Собственно здесь записывается наша функция
@@ -575,27 +591,19 @@ func SteepestDescent3(data OMInterface) {
 	const MAXITERATIONS = 1000
 	var k int
 	var lambda float64
-	//var delta float64 // шаг дифференцирования
-
-	//function := data.GetFunction()
-	var args []float64
-	copy(args,data.GetX())
-	epsilon := data.GetEpsilon2()
 
 	// П.1. Задают начальное приближение и точность расчёта vec x[0], epsilon
 	// Шаг 1. Задать x[0], epsilon1 > 0, epsilon2 > 0, предельное число итераций М. 
 	//  Найти градиент функции в произвольной точке. Определить частные производные функции f(x):
 	//  grad f(x) = [ df(x)/x1,...,df(x)/dxn ]T(транспонированный вектор)
 	// Начальное приближение u[0]
-	u_cur := make([]float64, len(data.GetX()))
+	args := data.GetX()
+	epsilon := data.GetEpsilon2()
+	u_cur := make([]float64, len(args))
 	// Новое прилижение u[k]
 	u_next := make([]float64, len(u_cur))
 
 	copy(u_cur, args)
-	//delta = 0.05 //TODO: ajust
-
-	// оператор набла(получить его реализацию)
-	//nabla := grad2
 
 	fmt.Println("## Исходная точка:")
 	for _,x := range u_cur {
@@ -673,7 +681,6 @@ func SteepestDescent3(data OMInterface) {
 	fmt.Println()
 
 	// получить минимум фуркции
-	//return function(u_cur)
 	data.SetX(u_cur)
 	data.SetY(data.Function())
 }
