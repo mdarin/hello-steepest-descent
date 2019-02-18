@@ -43,11 +43,11 @@ import(
 	Шаг 5. Проверить выполнение неравенства k ≥ M:
 		а) если неравенство выполнено, то x[0] = x[k], останов;
 		б) если нет, то перейти к шагу 6.
-	Шаг 6. Вычислить величину шага lambda[k=0], из условия
+	Шаг 6. Вычислить величину шага lambda[k], из условия
 		F(lambda[k]) = f(x[k] - lambda[k] * grad f(x[k])) -> min_lamda[k].
 	Шаг 7. Вычислить x[k+1] = x[k] - lambda[k] * grad f(x[k]).
 	Шаг 8. Проверить выполнение условий ||x[k+1] - x[k]|| < epsilon2, ||f(x[k+1]) - f(x[k])|| < epsilon2:
-		а) если оба условия выполнены при текущем значении k и k = k - 1, то расчет окончен, x[0] = x[k+1];
+		а) если оба условия выполнены при текущем значении k и k = k + 1, то расчет окончен, x[0] = x[k+1];
 		б) если хотя бы одно из условий не выполнено, то положить k = k + 1 и перейти к шагу 3.
 
 	[https://studfiles.net/preview/1874323/page:2/]
@@ -104,13 +104,6 @@ func (md *Mydata) Function() float64 {
 	return md.args[0]*md.args[0] + 2.0*md.args[0]*md.args[1] + 3.0*md.args[1]*md.args[1] - 2.0*md.args[0]-3.0*md.args[1]
 }
 
-/*func (md *Mydata) GetFunction() (func (data OMInterface) float64) {
-	return func (data OMInterface) float64 {
-		args := data.GetX()
-		return args[0]*args[0] + 2.0*args[0]*args[1] + 3.0*args[1]*args[1] - 2.0*args[0]-3.0*args[1]
-	}
-}*/
-
 func (md *Mydata) GetX() []float64 {
 	return md.args
 }
@@ -127,8 +120,6 @@ func (md *Mydata) GetY() float64 {
 	return md.y
 }
 
-func (md *Mydata) GetEpsilon() float64 { return 0.01 }
-
 func (md *Mydata) Grad() []float64 {
 	args := md.GetX()
 	//function := md.GetFunction()
@@ -144,7 +135,6 @@ func (md *Mydata) Grad() []float64 {
 		gradient[i] = ( left.Function() - right.Function() ) / (2.0 * delta)
 	}
 	return gradient
-
 }
 
 // задать фукнцию оценки g(x) для метода одномерной оптимизации
@@ -185,7 +175,8 @@ func (md *Mydata) GetEpsilon2() float64 { return 0.01 }
 // Аргумент минимизации (для наискорейшего спуска argmin по lambda)
 // phi(x) метод одномерной оптимизаци
 func (md *Mydata) GetF() (func(data OMInterface) float64) {
-	return dichotomia3
+	//return dichotomia3
+	return goldensection3
 }
 
 
@@ -211,6 +202,7 @@ func main() {
 	fmt.Println()
 
 	// здесь уже использованы интерфейсы и фунции высшего порядка
+	// не понятно, сложно или всё же универсально вышло?
 	// не понятно, сложно или всё же универсально вышло?
 	mydata := New(2)
 	mydata.SetX([]float64{x,y})
@@ -246,47 +238,14 @@ func f_dy(x, y float64) float64 {
 // Это функция g в методе наискорейшего (градиентного) спуска
 // операция grad или nabla
 func g(x, y, lambda float64) float64 {
-
-	//var model_f_dx float64 = f_dx(x, y)
-	//var model_f_dy float64 = f_dy(x, y)
-	// срединный разностный метод вычисления первой производной
-	// numerical differentiation
-	// NOTE: delta ought to be small enough but you should remember 
-	//       that too small value will drive to reducing accuracy
-	//var delta float64 = 0.5
-	// nabla f(x,y)
-	//var approx_f_dx float64 = ( f(x + delta / 2.0, y) - f(x - delta / 2.0, y) ) / delta 
-	// nabla f(x,y)
-	//var approx_f_dy float64 = ( f(x, y + delta / 2.0) - f(x, y - delta / 2.0) ) / delta 	
-	//var approx_f_dx float64 = ( f(x + delta, y) - f(x - delta, y) ) / (2.0 * delta) 
-	//var approx_f_dy float64 = ( f(x, y + delta) - f(x, y - delta) ) / (2.0 * delta)
-
-	//fmt.Printf("  model x: %.5f  approx1 x: %.5f\n", model_f_dx, approx_f_dx)
-	//fmt.Printf("  model y: %.5f  approx1 y: %.5f\n", model_f_dy, approx_f_dy)
-	//fmt.Println()
-
-	//	Шаг 1. (продолжение)
-	//		Найти градиент функции в произвольной точке. Определить частные производные функции f(x):
-	//		grad f(x) = [ df(x)/x1,...,df(x)/dxn ]T(транспонированный вектор)
-    return f(x - lambda * f_dx(x, y), y - lambda * f_dy(x, y))
-	//return f(x - lambda * approx_f_dx, y - lambda * approx_f_dy)
+	return f(x - lambda * f_dx(x, y), y - lambda * f_dy(x, y))
 }
 
 
-func g2(function func (x float64) float64, x, lambda, delta float64) float64 {
-	return function(x - lambda * grad(function, x, delta))
-}
-// срединный разностный метод вычисления первой производной
-// numerical differentiation
-// median difference method
-//                      __
-// grad F or nabla F or \/F
-func grad(function func (x float64) float64, x, delta float64) float64 {
-	// NOTE: delta ought to be small enough but you should remember 
-	//       that too small value will drive to reducing accuracy
-	return ( function(x + delta / 2.0) - function(x - delta / 2.0) ) / delta
-	//return ( function(x + delta) - function(x - delta) ) / (2.0 * delta)
-}
+//func g2(function func (x float64) float64, x, lambda, delta float64) float64 {
+//	return function(x - lambda * grad(function, x, delta))
+//}
+
 // Найти градиент функции в произвольной точке.
 // Найти частные производные функции f(x)
 // grad f(x) = [ df(x)/x1,...,df(x)/dxn ]T(транспонированный вектор)
@@ -306,9 +265,6 @@ func grad2(function func (args []float64) float64, args []float64, delta float64
 		copy(right, args)
 		left[i] += delta
 		right[i] -= delta
-		//fmt.Println(" left:", left)
-		//fmt.Println(" right:", right)
-		//fmt.Println(" args after:", args)
 		gradient[i] = ( function(left) - function(right) ) / (2.0 * delta)
 	}
 	return gradient
@@ -318,11 +274,11 @@ func grad2(function func (args []float64) float64, args []float64, delta float64
 // двумерная норма
 // условие остановки
 func norma(x, y float64) float64 {
-    return math.Sqrt(x*x + y*y)
+	return math.Sqrt(x*x + y*y)
 }
 
 func norma2(x float64) float64 {
-    return math.Sqrt(x*x)
+	return math.Sqrt(x*x)
 }
 
 
@@ -422,15 +378,15 @@ func dichotomia2(g func(args []float64, lambda float64) float64, args []float64,
 
 // Метод половинного деления для нахождения минимума
 // dichotomia — разделение на две части
-// epsiolon критерий требуемой точности
 func dichotomia3(data OMInterface) float64 {
 	// Номер шага
 	var k int
 	// Отклонени от середины отрезка влево, вправо
 	var left float64
 	var right float64
-	// Величина на которую мы отклонимся от середины отрезка
+	// критерий требуемой точности
 	epsilon := data.GetEpsilon1()
+	// Величина на которую мы отклонимся от середины отрезка
 	var deviation float64 = 0.5 * epsilon
 	// Точка минимума
 	var x_min float64
@@ -449,8 +405,6 @@ func dichotomia3(data OMInterface) float64 {
 		// в частности у нас deviation = 0.5 * epsilon)
 		left = (ak + bk - deviation) / 2.0
 		right = (ak + bk + deviation) / 2.0
-		//fmt.Printf(" [%d] real left: %.3f  right: %.3f epsilon: %f\n", k, left, right, (right - left))
-		//fmt.Println()
 		// Шаг 3. Вычислить grad f(x[k])
 		// Проверяем в какую часть попадает точка минимума 
 		// слева от разбиения или справа и выбираем соответствующую точку
@@ -467,14 +421,13 @@ func dichotomia3(data OMInterface) float64 {
 	// точка как серединка полученного отрезочка a b
 	// minimum point
   x_min = (ak + bk) / 2.0;
-	//fmt.Printf("  x_min: %.3f\n", x_min)
-  return x_min;
+  return x_min
 }
 
 // Метод деления в пропорции "Золотого сечения" для нахождения минимума
 // epsiolon критерий требуемой точности
 func goldensection(g func(args []float64, lambda float64) float64, args []float64, a0, b0, epsilon float64/*,n int //max iterations*/) float64 {
-  // Номер шага
+	// Номер шага
 	var k int
 	// Отклонени от точки деления отрезка влево, вправо
 	var left float64
@@ -485,60 +438,105 @@ func goldensection(g func(args []float64, lambda float64) float64, args []float6
 	var ak float64 = a0
 	var bk float64 = b0
 	// Пропорция золотого сечения
-    // L / m = m / n
+	// L / m = m / n
 	// L = 1 - это целый отрезок
 	// m = (-1+sqrt(5))/2 = 0,618*L - это бОльшая часть
 	// n = L - m = 0,382 * L - это меньшая часть
 	m := (-1.0 + math.Sqrt(5.0)) / 2.0
 	n := 1.0 - m
-	//fmt.Printf("K = %.3f 1-K = %.3f\n", m, n)
 
 	//	Шаг 3. Вычислить grad f(x[k]).
 	//	Шаг 4. Проверить выполнение критерия окончания  ||grad f(x[k])|| < epsilon1 :
 	//		а) если критерий выполнен, то x[0] = x[k], останов;
 	//		б) если критерий не выполнен, то перейти к шагу 5.
-    // Пока длина отрезка больше заданной точности
+	// Пока длина отрезка больше заданной точности
 	niterations := 100
-  for k = 1; (bk - ak) >= epsilon && k < niterations; k++ {
+	for k = 1; (bk - ak) >= epsilon && k < niterations; k++ {
 		// Деллим отрезок в пропрорции золотого сечения
 		left = ak + (bk - ak) * n
 		right = ak + (bk - ak) * m
-		//fmt.Printf(" [%d] model left: %.3f  right: %.3f epsilon: %f\n", k, mleft, mright, (mright - mleft))
-		//fmt.Printf(" [%d] real left: %.3f  right: %.3f epsilon: %f\n", k, left, right, (right - left))
-		//fmt.Println()
 
 		// Шаг 3. Вычислить grad f(x[k])
-        // Проверяем в какую часть попадает точка минимума 
+    // Проверяем в какую часть попадает точка минимума 
 		// слева от разбиения или справа и выбираем соответствующую точку
+		// и переносим границу
 		if g(args, left) <= g(args, right) {
 		// Теперь правая граница отрезка локализации равна right
-				bk = right
+			bk = right
 		} else {
 		// Теперь левая граница отрезка локализации равна left
-				ak = left
+			ak = left
 		}
-  }
+	}
 
 	// точка как серединка полученного отрезочка a b
 	// minimum point
-  x_min = (ak + bk) / 2.0
-	//fmt.Printf("  x_min: %.3f\n", x_min)
-  return x_min;
+	x_min = (ak + bk) / 2.0
+	return x_min;
 }
 
 
+// Метод деления в пропорции "Золотого сечения" для нахождения минимума
+// epsiolon критерий требуемой точности
+func goldensection3(data OMInterface) float64 {
+	// Номер шага
+	var k int
+	// Отклонени от точки деления отрезка влево, вправо
+	var left float64
+	var right float64
+	// Точка минимума
+	var x_min float64
+	// критерий требуемой точности
+	epsilon := data.GetEpsilon1()
+	// Отрезок локализации минимума
+	ak,bk := data.GetInterval()
+	// функция g(x) оценки минимума в методах одномерной оптимизации на отрезке a,b 
+	g := data.GetG()
+	// Пропорция золотого сечения
+	// L / m = m / n
+	// L = 1 - это целый отрезок
+	// m = (-1+sqrt(5))/2 = 0,618*L - это бОльшая часть
+	// n = L - m = 0,382 * L - это меньшая часть
+	m := (-1.0 + math.Sqrt(5.0)) / 2.0
+	n := 1.0 - m
+
+	// Шаг 3. Вычислить grad f(x[k]).
+	// Шаг 4. Проверить выполнение критерия окончания  ||grad f(x[k])|| < epsilon1 :
+	//  а) если критерий выполнен, то x[0] = x[k], останов;
+	//  б) если критерий не выполнен, то перейти к шагу 5.
+	// Пока длина отрезка больше заданной точности
+	niterations := 100//TODO:data.GetIterMax()...
+	for k = 1; (bk - ak) >= epsilon && k < niterations; k++ {
+		// Деллим отрезок в пропрорции золотого сечения
+		left = ak + (bk - ak) * n
+		right = ak + (bk - ak) * m
+
+		// Шаг 3. Вычислить grad f(x[k])
+		// Проверяем в какую часть попадает точка минимума 
+		// слева от разбиения или справа и выбираем соответствующую точку
+		// и переносим границу
+		if g(data, left) <= g(data, right) {
+		// Теперь правая граница отрезка локализации равна right
+			bk = right
+		} else {
+		// Теперь левая граница отрезка локализации равна left
+			ak = left
+		}
+	}
+
+	// точка как серединка полученного отрезочка a b
+	// minimum point
+	x_min = (ak + bk) / 2.0
+	return x_min;
+}
 
 // n-мерная норма
 // условие остановки
 func norma3(cur, next []float64) float64 {
 	var sumSquares float64
-
 	for i := 0; i < len(cur); i++ {
 		sumSquares += (next[i] - cur[i])*(next[i] - cur[i])
 	}
-
-	//fmt.Println("    norma:", sumSquares)
-	//fmt.Println("    norma:", math.Sqrt(sumSquares))
 	return math.Sqrt(sumSquares)
 }
 
@@ -556,7 +554,6 @@ type OMInterface interface {
 	GetG() func(data OMInterface, lambda float64) float64
 	// фукнция миниму которой мы ищев в методах многомерной оптимизации
 	Function() float64
-	//GetFunction() (func(data OMInterface) float64)
 	// вектор аргументов функции
 	GetX() []float64
 	SetX(args []float64)
@@ -579,7 +576,13 @@ type OMInterface interface {
 	GetEpsilon2() float64
 	// Аргумент минимизации (для наискорейшего спуска argmin по lambda)
 	// phi(x) метод одномерной оптимизаци
-	GetF() (func(data OMInterface) float64)
+	GetF() func(data OMInterface) float64
+	//
+	//TODO: Условие остановки:
+	// Если |vec x[k+1] - vec x[k]| > epsilon
+	//  или |F(vec x[k+1]) - F(vec x[k])| > epsilon
+	//  или |nabla F(vec x[k+1])| > epsilon (выбирают одно из условий)
+	//Norma()
 }
 
 
@@ -588,10 +591,9 @@ type OMInterface interface {
 // Метод наискорейшего спуска(пример алгоритма)
 // the method of steepest descent or stationary-phase method or saddle-point method
 func SteepestDescent3(data OMInterface) {
-	const MAXITERATIONS = 1000
+	const MAXITERATIONS = 1000 //TODO: data.GetIterMax()...
 	var k int
 	var lambda float64
-
 	// П.1. Задают начальное приближение и точность расчёта vec x[0], epsilon
 	// Шаг 1. Задать x[0], epsilon1 > 0, epsilon2 > 0, предельное число итераций М. 
 	//  Найти градиент функции в произвольной точке. Определить частные производные функции f(x):
@@ -605,14 +607,15 @@ func SteepestDescent3(data OMInterface) {
 
 	copy(u_cur, args)
 
+	// DEBUG
 	fmt.Println("## Исходная точка:")
 	for _,x := range u_cur {
 		fmt.Printf(" %.4f", x)
 	}
 	fmt.Println()
-
 	fmt.Println()
 	fmt.Println("## Приближения:")
+
 	//Шаг 2. Положить k = 0
 	stop := false
 	for k = 0; k < MAXITERATIONS && !stop ; k++ {
@@ -695,7 +698,7 @@ func SteepestDescent2(function func(args []float64) float64, args []float64, eps
 	var k int
 	var lambda float64
 	var delta float64 // шаг дифференцирования
-	
+
 	// П.1. Задают начальное приближение и точность расчёта vec x[0], epsilon
 	// Шаг 1. Задать x[0], epsilon1 > 0, epsilon2 > 0, предельное число итераций М.
 	//  Найти градиент функции в произвольной точке. Определить частные производные функции f(x):
@@ -704,7 +707,7 @@ func SteepestDescent2(function func(args []float64) float64, args []float64, eps
 	u_cur := make([]float64, len(args))
 	// Новое прилижение u[k]
 	u_next := make([]float64, len(u_cur))
-	
+
 	copy(u_cur, args)
 	delta = 0.05 //TODO: ajust
 
@@ -714,7 +717,7 @@ func SteepestDescent2(function func(args []float64) float64, args []float64, eps
 		fmt.Printf(" %.4f", x)
 	}
 	fmt.Println()
-	
+
 	fmt.Println()
 	fmt.Println("## Приближения:")
 	//Шаг 2. Положить k = 0
@@ -725,7 +728,7 @@ func SteepestDescent2(function func(args []float64) float64, args []float64, eps
 		// где lambda[k]= argmin_lambda F(vec x[k] - lambda * nabla F(vec x[k]))
 		//  Шаг 3. Вычислить grad f(x[k]).
 		gradient := grad2(function, u_cur, delta)
-		
+
 		//  Шаг 4. Проверить выполнение критерия окончания  ||grad f(x[k])|| < epsilon1 :
 		//   а) если критерий выполнен, то x[0] = x[k], останов;
 		//   б) если критерий не выполнен, то перейти к шагу 5.
@@ -760,7 +763,7 @@ func SteepestDescent2(function func(args []float64) float64, args []float64, eps
 		// Находим lambda[k] как минимум функции g(x[k]) на отрезке -10000,100000
 		lambda = argmin(g, u_cur, -10000, 100000, epsilon)
 		//fmt.Println("   lambda:", lambda)
-	
+
 		// Вычисляем u[k] новое прилижение
 		//  Шаг 7. Вычислить x[k+1] = x[k] - lambda[k] * grad f(x[k])
 		for i,dfx_dxi := range gradient {
@@ -789,10 +792,10 @@ func SteepestDescent2(function func(args []float64) float64, args []float64, eps
 				stop = true
 			}
 		}
-		
+
 		copy(u_cur, u_next)
 	}
-	
+
 	fmt.Println()
 	fmt.Println("## Точка минимума при epsilon:", epsilon)
 	fmt.Println(" f(x):", function(u_cur))
@@ -800,7 +803,7 @@ func SteepestDescent2(function func(args []float64) float64, args []float64, eps
 		fmt.Printf(" %.4f", x)
 	}
 	fmt.Println()
-		
+
 	// получить минимум фуркции
 	return function(u_cur)
 }
@@ -814,7 +817,7 @@ func SteepestDescent(bx, by, epsilon float64) float64 {
 	var y_cur float64
 	var x_next float64
 	var y_next float64
-	var lambda float64	
+	var lambda float64
 	// П.1. Задают начальное приближение и точность расчёта vec x[0], epsilon
 	//	Шаг 1. Задать x[0], epsilon1 > 0, epsilon2 > 0, предельное число итераций М.
 	//		Найти градиент функции в произвольной точке. Определить частные производные функции f(x):
@@ -826,7 +829,7 @@ func SteepestDescent(bx, by, epsilon float64) float64 {
 	fmt.Println("## Исходная точка:")
 
 	fmt.Printf("  x[0]: (%f, %f)\n", x_cur, y_cur)
-	
+
 	fmt.Println()
 	fmt.Println("## Приближения:")
 	//Шаг 2. Положить k = 0
@@ -855,7 +858,7 @@ func SteepestDescent(bx, by, epsilon float64) float64 {
 		//  Шаг 7. Вычислить x[k+1] = x[k] - lambda[k] * grad f(x[k])
 		x_next = x_cur - lambda * f_dx(x_cur, y_cur)
 		y_next = y_cur - lambda * f_dy(x_cur, y_cur)
-		
+
 		fmt.Println()
 		fmt.Printf("  x[%d]: (%.2f, %.2f)\n", k+1, x_next, y_next)
 		fmt.Printf("  f(%.2f, %.2f) = %.2f\n", x_next, y_next, f(x_next, y_next))
@@ -876,15 +879,15 @@ func SteepestDescent(bx, by, epsilon float64) float64 {
 				stop = true
 			}
 		}
-		
+
 		x_cur = x_next
 		y_cur = y_next
 	}
-	
+
 	fmt.Println()
 	fmt.Println("## Точка минимума epsilon:", epsilon)
 	fmt.Printf("   f(%.2f , %.2f) = %.2f\n", x_cur, y_cur, f(x_cur, y_cur))
-		
+
 	// получить минимум фуркции
 	return f(x_cur, y_cur)
 }
