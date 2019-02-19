@@ -181,6 +181,147 @@ func (md *Mydata) GetF() (func(data OMInterface) float64) {
 
 
 
+
+
+
+
+
+
+type Mydatainterface2 interface {
+	// функция g(x) оценки минимума в методах одномерной оптимизации 
+	// в методе наискорейшего спуска(вообще в многомерной оптимизации) это функция g(x[k]) 
+	// применяемая для нахождения шага поиска lambda[k] как минимума функции g(x[k])
+	// на отрезке a,b 
+	// lambda здесь это вычисленная точка по методу поиска минимума, имя надо бы выбрать другое... 
+	GetG() func(data ODO, lambda float64) float64
+	// фукнция миниму которой мы ищев в методах многомерной оптимизации
+	Function() float64
+	//GetFunction() (func(data OMInterface) float64)
+	// вектор аргументов функции
+	GetX() []float64
+	SetX(args []float64)
+	// значение фукнции
+	SetY(float64)
+	GetY() float64
+	// градиет функции - вектор частных производных
+	Grad() []float64
+	// отрезок для поиска минимума методом одной оптимизации
+	//a,b float64
+	GetInterval() (float64, float64)
+	// максимальное количесво приближений 
+	//n int - для одномерной оптимизации
+	//m int - многомерной оптимизации
+	GetMaxIterODO() int
+	GetMaxIterMDO() int
+	// требуемая точность
+	//epsilon1 float64 для метода одномерной оптимизации
+	//epsilon2 float64 для метода многомерной оптимизации
+	GetEpsilon1() float64
+	GetEpsilon2() float64
+	// Аргумент минимизации (для наискорейшего спуска argmin по lambda)
+	// phi(x) метод одномерной оптимизаци
+	GetF() (func(data ODO) float64)
+
+}
+type Mydata2 struct {
+	args []float64
+	y float64
+}
+func New2(n int) *Mydata2 {
+	md := new(Mydata2)
+	md.args = make([]float64, n)
+	return md
+}
+
+func (md *Mydata2) Function() float64 {
+	return md.args[0]*md.args[0] + 2.0*md.args[0]*md.args[1] + 3.0*md.args[1]*md.args[1] - 2.0*md.args[0]-3.0*md.args[1]
+}
+
+func (md *Mydata2) GetX() []float64 {
+	return md.args
+}
+
+func (md *Mydata2) SetX(args []float64) {
+	copy(md.args, args)
+}
+
+func (md *Mydata2) SetY(y float64) {
+	md.y = y
+}
+
+func (md *Mydata2) GetY() float64 {
+	return md.y
+}
+
+func (md *Mydata2) Grad() []float64 {
+	args := md.GetX()
+	//function := md.GetFunction()
+	left := New(len(args))
+	left.SetX(args)
+	right := New(len(args))
+	right.SetX(args)
+	delta := 0.05
+	gradient := make([]float64, len(args))
+	for i := 0; i < len(gradient); i++ {
+		left.args[i] += delta
+		right.args[i] -= delta
+		gradient[i] = ( left.Function() - right.Function() ) / (2.0 * delta)
+	}
+	return gradient
+}
+
+// задать фукнцию оценки g(x) для метода одномерной оптимизации
+func (md *Mydata2) GetG() (func (data ODO, lambda float64) float64) {
+	g := func (data ODO, lambda float64) float64 {
+		args := data.GetX()
+		//function := data.GetFunction()
+		temp := New(len(args))
+		gradient := data.Grad()
+		for i,df_dxi := range gradient {
+			temp.args[i] = args[i] - lambda * df_dxi
+		}
+		return temp.Function()
+	}
+	return g
+}
+
+func (md *Mydata2) GetInterval() (float64,float64) {
+	a, b := -10000.0, 100000.0
+	return a,b
+}
+// максимальное количесво приближений 
+//n int - для одномерной оптимизации
+//m int - многомерной оптимизации
+func (md *Mydata2) GetMaxIterODO() (n int) {
+	n = 100
+	return
+}
+func (md *Mydata2) GetMaxIterMDO() (m int) {
+	m = 1000
+	return
+}
+// требуемая точность
+//epsilon1 float64 для метода одномерной оптимизации
+//epsilon2 float64 для метода многомерной оптимизации
+func (md *Mydata2) GetEpsilon1() float64 { return 0.01 }
+func (md *Mydata2) GetEpsilon2() float64 { return 0.01 }
+// Аргумент минимизации (для наискорейшего спуска argmin по lambda)
+// phi(x) метод одномерной оптимизаци
+func (md *Mydata2) GetF() (func(data ODO) float64) {
+	return dichotomia4
+	//4return goldensection4
+}
+
+
+
+
+
+
+
+
+
+
+
 //
 // main driver
 //
@@ -203,7 +344,6 @@ func main() {
 
 	// здесь уже использованы интерфейсы и фунции высшего порядка
 	// не понятно, сложно или всё же универсально вышло?
-	// не понятно, сложно или всё же универсально вышло?
 	mydata := New(2)
 	mydata.SetX([]float64{x,y})
 	SteepestDescent3(mydata)
@@ -213,6 +353,17 @@ func main() {
 	}
 	fmt.Println()
 	fmt.Printf("## y: %.3f\n", mydata.GetY())
+
+	// копипаста, но здесь уже использованы встроенные интерфейсы
+	mydata2 := New2(2)
+	mydata2.SetX([]float64{x,y})
+	SteepestDescent4(mydata2)
+	fmt.Printf("## x: ")
+	for _,x := range mydata2.GetX() {
+		fmt.Printf(" %.3f", x)
+	}
+	fmt.Println()
+	fmt.Printf("## y: %.3f\n", mydata2.GetY())
 }
 
 // Собственно здесь записывается наша функция
@@ -424,6 +575,57 @@ func dichotomia3(data OMInterface) float64 {
   return x_min
 }
 
+
+// Метод половинного деления для нахождения минимума
+// dichotomia — разделение на две части
+func dichotomia4(data ODO) float64 {
+	// Номер шага
+	var k int
+	// Отклонени от середины отрезка влево, вправо
+	var left float64
+	var right float64
+	// критерий требуемой точности
+	epsilon := data.GetEpsilon1()
+	// Величина на которую мы отклонимся от середины отрезка
+	var deviation float64 = 0.5 * epsilon
+	// Точка минимума
+	var x_min float64
+	// Отрезок локализации минимума
+	ak,bk := data.GetInterval()
+	// функция g(x) оценки минимума в методах одномерной оптимизации на отрезке a,b 
+	g := data.GetG()
+
+	//	Шаг 3. Вычислить grad f(x[k]).
+	//	Шаг 4. Проверить выполнение критерия окончания  ||grad f(x[k])|| < epsilon1 :
+	//		а) если критерий выполнен, то x[0] = x[k], останов;
+	//		б) если критерий не выполнен, то перейти к шагу 5.
+	// Пока длина отрезка больше заданной точности
+	for k = 1; (bk - ak) >= epsilon; k++ {
+		// Берем середину (ну почти середину - +\- некоторое дельта 
+		// в частности у нас deviation = 0.5 * epsilon)
+		left = (ak + bk - deviation) / 2.0
+		right = (ak + bk + deviation) / 2.0
+		// Шаг 3. Вычислить grad f(x[k])
+		// Проверяем в какую часть попадает точка минимума 
+		// слева от разбиения или справа и выбираем соответствующую точку
+		// и переносим границу
+		if g(data, left) <= g(data, right) {
+		// Теперь правая граница отрезка локализации равна right
+			bk = right;
+		} else {
+		// Теперь левая граница отрезка локализации равна left
+			ak = left;
+		}
+	}
+
+	// точка как серединка полученного отрезочка a b
+	// minimum point
+  x_min = (ak + bk) / 2.0;
+  return x_min
+}
+
+
+
 // Метод деления в пропорции "Золотого сечения" для нахождения минимума
 // epsiolon критерий требуемой точности
 func goldensection(g func(args []float64, lambda float64) float64, args []float64, a0, b0, epsilon float64/*,n int //max iterations*/) float64 {
@@ -477,7 +679,6 @@ func goldensection(g func(args []float64, lambda float64) float64, args []float6
 
 
 // Метод деления в пропорции "Золотого сечения" для нахождения минимума
-// epsiolon критерий требуемой точности
 func goldensection3(data OMInterface) float64 {
 	// Номер шага
 	var k int
@@ -530,6 +731,63 @@ func goldensection3(data OMInterface) float64 {
 	return x_min;
 }
 
+// Метод деления в пропорции "Золотого сечения" для нахождения минимума
+func goldensection4(data ODO) float64 {
+	// Номер шага
+	var k int
+	// Отклонени от точки деления отрезка влево, вправо
+	var left float64
+	var right float64
+	// Точка минимума
+	var x_min float64
+	// критерий требуемой точности
+	epsilon := data.GetEpsilon1()
+	// Отрезок локализации минимума
+	ak,bk := data.GetInterval()
+	// функция g(x) оценки минимума в методах одномерной оптимизации на отрезке a,b 
+	g := data.GetG()
+	// Пропорция золотого сечения
+	// L / m = m / n
+	// L = 1 - это целый отрезок
+	// m = (-1+sqrt(5))/2 = 0,618*L - это бОльшая часть
+	// n = L - m = 0,382 * L - это меньшая часть
+	m := (-1.0 + math.Sqrt(5.0)) / 2.0
+	n := 1.0 - m
+
+	// Шаг 3. Вычислить grad f(x[k]).
+	// Шаг 4. Проверить выполнение критерия окончания  ||grad f(x[k])|| < epsilon1 :
+	//  а) если критерий выполнен, то x[0] = x[k], останов;
+	//  б) если критерий не выполнен, то перейти к шагу 5.
+	// Пока длина отрезка больше заданной точности
+	niterations := 100//TODO:data.GetIterMax()...
+	for k = 1; (bk - ak) >= epsilon && k < niterations; k++ {
+		// Деллим отрезок в пропрорции золотого сечения
+		left = ak + (bk - ak) * n
+		right = ak + (bk - ak) * m
+
+		// Шаг 3. Вычислить grad f(x[k])
+		// Проверяем в какую часть попадает точка минимума 
+		// слева от разбиения или справа и выбираем соответствующую точку
+		// и переносим границу
+		if g(data, left) <= g(data, right) {
+		// Теперь правая граница отрезка локализации равна right
+			bk = right
+		} else {
+		// Теперь левая граница отрезка локализации равна left
+			ak = left
+		}
+	}
+
+	// точка как серединка полученного отрезочка a b
+	// minimum point
+	x_min = (ak + bk) / 2.0
+	return x_min;
+}
+
+
+
+
+
 // n-мерная норма
 // условие остановки
 func norma3(cur, next []float64) float64 {
@@ -543,8 +801,161 @@ func norma3(cur, next []float64) float64 {
 
 
 
-
+//
 // Optimization methods interface
+//
+// methods of one-dimensional and multidimensional optimization
+type ODO interface {
+	// отрезок для поиска минимума методом одной оптимизации
+	//a,b float64
+	GetInterval() (float64,float64)
+	// максимальное количесво приближений 
+	//n int - для одномерной оптимизации
+	GetMaxIterODO() int
+	// требуемая точность
+	//epsilon1 float64 для метода одномерной оптимизации
+	GetEpsilon1() float64
+	// функция g(x) оценки минимума в методах одномерной оптимизации 
+	// в методе наискорейшего спуска(вообще в многомерной оптимизации) это функция g(x[k]) 
+	// применяемая для нахождения шага поиска lambda[k] как минимума функции g(x[k])
+	// на отрезке a,b
+	// lambda здесь это вычисленная точка по методу поиска минимума, имя надо бы выбрать другое... 
+	GetG() func(data ODO, lambda float64) float64
+	// вектор аргументов функции
+	GetX() []float64
+	SetX(args []float64)
+	// фукнция миниму которой мы ищев в методах многомерной оптимизации
+	Function() float64
+	// значение фукнции
+	SetY(float64)
+	// градиет функции - вектор частных производных
+	Grad() []float64
+}
+
+type MDO interface {
+	ODO
+	// максимальное количесво приближений 
+	//m int - многомерной оптимизации
+	GetMaxIterMDO() int
+	// требуемая точность
+	//epsilon2 float64 для метода многомерной оптимизации
+	GetEpsilon2() float64
+	// Аргумент минимизации (для наискорейшего спуска argmin по lambda)
+	// phi(x) метод одномерной оптимизаци
+	GetF() func(data ODO) float64
+	//
+	//TODO: Условие остановки:
+	// Если |vec x[k+1] - vec x[k]| > epsilon
+	//  или |F(vec x[k+1]) - F(vec x[k])| > epsilon
+	//  или |nabla F(vec x[k+1])| > epsilon (выбирают одно из условий)
+	//Norma()
+}
+
+
+// Метод наискорейшего спуска
+// the method of steepest descent or stationary-phase method or saddle-point method
+func SteepestDescent4(data MDO) {
+	var k int
+	var lambda float64
+	// П.1. Задают начальное приближение и точность расчёта vec x[0], epsilon
+	// Шаг 1. Задать x[0], epsilon1 > 0, epsilon2 > 0, предельное число итераций М. 
+	//  Найти градиент функции в произвольной точке. Определить частные производные функции f(x):
+	//  grad f(x) = [ df(x)/x1,...,df(x)/dxn ]T(транспонированный вектор)
+	var ninterations int = data.GetMaxIterMDO()
+	args := data.GetX()
+	epsilon := data.GetEpsilon2()
+	// Начальное приближение u[0]
+	u_cur := make([]float64, len(args))
+	// Новое прилижение u[k]
+	u_next := make([]float64, len(u_cur))
+
+	copy(u_cur, args)
+
+	// DEBUG
+	fmt.Println("## Исходная точка:")
+	for _,x := range u_cur {
+		fmt.Printf(" %.4f", x)
+	}
+	fmt.Println()
+	fmt.Println()
+	fmt.Println("## Приближения:")
+
+	//Шаг 2. Положить k = 0
+	stop := false
+	for k = 0; k < ninterations && !stop ; k++ {
+		fmt.Printf("%d: ", k)
+		// П.2. Рассчитывают vec x[k+1] = vec x[k] - lambda[k] * nabla F(vec x[k]),
+		// где lambda[k]= argmin{lambda} F(vec x[k] - lambda * nabla F(vec x[k]))
+		// Шаг 3. Вычислить grad f(x[k]).
+		gradient := data.Grad()
+		// Шаг 4. Проверить выполнение критерия окончания  ||grad f(x[k])|| < epsilon1 :
+		//  а) если критерий выполнен, то x[0] = x[k], останов;
+		//  б) если критерий не выполнен, то перейти к шагу 5.
+		//
+		// Шаг 5. Проверить выполнение неравенства k ≥ M:
+		//  а) если неравенство выполнено, то x[0] = x[k], останов;
+		//  б) если нет, то перейти к шагу 6
+		//
+		// Шаг 6. Вычислить величину шага lambda[k] из условия
+		//  F(lambda[k]) = f(x[k] - lambda[k] * grad f(x[k])) -> min lambda[k]
+		// Аргумент минимизации argmin по lambda(получить его реализацию)
+		argmin := data.GetF()
+		// Находим lambda[k] как минимум функции g(x[k]) на отрезке a = -10000, b = 100000
+		lambda = argmin(data)
+		//fmt.Println("   lambda:", lambda)
+		// Вычисляем u[k] новое прилижение
+		//  Шаг 7. Вычислить x[k+1] = x[k] - lambda[k] * grad f(x[k])
+		for i,df_dxi := range gradient {
+			u_next[i] = u_cur[i] - lambda * df_dxi
+		}
+		//DEBUG
+		fmt.Println()
+		data.SetX(u_next)
+		fmt.Printf("  f(x) = %.4f\n", data.Function())
+		for _,x := range u_next {
+			fmt.Printf(" %.4f", x)
+		}
+		fmt.Println()
+
+		// П.3. Проверяют условие остановки:
+		// Если |vec x[k+1] - vec x[k]| > epsilon 
+		//  или |F(vec x[k+1]) - F(vec x[k])| > epsilon  
+		//  или |nabla F(vec x[k+1])| > epsilon (выбирают одно из условий), 
+		// то k = k + 1 и переход к П.2.
+		// Иначе vec x = vec x[k+1] и останов.
+		// 	Шаг 8. Проверить выполнение условий ||x[k+1] - x[k]|| < epsilon2, ||f(x[k+1]) - f(x[k])|| < epsilon2:
+		//		а) если оба условия выполнены при текущем значении k и k = k - 1, то расчет окончен, x[0] = x[k+1], останов;
+		//		б) если хотя бы одно из условий не выполнено, то положить k = k + 1 и перейти к шагу 3
+		if k > 1 {
+			// Проверяем условие остановки
+			if norma3(u_cur,u_next) < epsilon {
+				// останов
+				stop = true
+			}
+		}
+
+		copy(u_cur, u_next)
+	}
+
+	// DEBUG
+	fmt.Println()
+	fmt.Println("##* Точка минимума при epsilon:", epsilon)
+	data.SetX(u_cur)
+	fmt.Println(" f(x):", data.Function())
+	for _,x := range u_cur {
+		fmt.Printf(" %.4f", x)
+	}
+	fmt.Println()
+
+	// получить минимум фуркции
+	data.SetX(u_cur)
+	data.SetY(data.Function())
+}
+
+
+
+
+
 type OMInterface interface {
 	// функция g(x) оценки минимума в методах одномерной оптимизации 
 	// в методе наискорейшего спуска(вообще в многомерной оптимизации) это функция g(x[k]) 
@@ -588,7 +999,7 @@ type OMInterface interface {
 
 
 
-// Метод наискорейшего спуска(пример алгоритма)
+// Метод наискорейшего спуска
 // the method of steepest descent or stationary-phase method or saddle-point method
 func SteepestDescent3(data OMInterface) {
 	const MAXITERATIONS = 1000 //TODO: data.GetIterMax()...
