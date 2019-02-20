@@ -121,19 +121,39 @@ func (md *Mydata) GetY() float64 {
 }
 
 func (md *Mydata) Grad() []float64 {
+	// get current args state
 	args := md.GetX()
-	//function := md.GetFunction()
+	// left and right deviations
 	left := New(len(args))
-	left.SetX(args)
 	right := New(len(args))
-	right.SetX(args)
+	// differences
+	plus := make([]float64,len(args))
+	minus := make([]float64, len(args))
+	copy(plus, args)
+	copy(minus, args)
+	// numerical differentiation
+	//
+	// NOTE: delta ought to be small enough but you should remember 
+	//       that too small value will drive to reducing accuracy
+	//
+	// df/dxi = f(x1,x2,...,xi+/\xi,...xn) - f(x1,x2,...xi-/\xi,...xn) / (2 * /\xi) 
+	//
 	delta := 0.05
+	// vector of approx gradient of function f(x) values
 	gradient := make([]float64, len(args))
 	for i := 0; i < len(gradient); i++ {
-		left.args[i] += delta
-		right.args[i] -= delta
+		// make a diffrence 
+		plus[i] += delta
+		minus[i] -= delta
+		left.SetX(plus)
+		right.SetX(minus)
+		// calc aprox derivative
 		gradient[i] = ( left.Function() - right.Function() ) / (2.0 * delta)
+		// return at the begining
+		left.SetX(args)
+		right.SetX(args)
 	}
+
 	return gradient
 }
 
