@@ -126,11 +126,6 @@ func (md *Mydata) Grad() []float64 {
 	// left and right deviations
 	left := New(len(args))
 	right := New(len(args))
-	// differences
-	plus := make([]float64,len(args))
-	minus := make([]float64, len(args))
-	copy(plus, args)
-	copy(minus, args)
 	// numerical differentiation
 	//
 	// NOTE: delta ought to be small enough but you should remember 
@@ -142,6 +137,11 @@ func (md *Mydata) Grad() []float64 {
 	// vector of approx gradient of function f(x) values
 	gradient := make([]float64, len(args))
 	for i := 0; i < len(gradient); i++ {
+		// differences
+		plus := make([]float64,len(args))
+		minus := make([]float64, len(args))
+		copy(plus, args)
+		copy(minus, args)
 		// make a diffrence 
 		plus[i] += delta
 		minus[i] -= delta
