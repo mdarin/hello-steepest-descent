@@ -149,9 +149,6 @@ func (md *Mydata) Grad() []float64 {
 		right.SetX(minus)
 		// calc aprox derivative
 		gradient[i] = ( left.Function() - right.Function() ) / (2.0 * delta)
-		// return at the begining
-		left.SetX(args)
-		right.SetX(args)
 	}
 
 	return gradient
@@ -161,7 +158,6 @@ func (md *Mydata) Grad() []float64 {
 func (md *Mydata) GetG() (func (data OMInterface, lambda float64) float64) {
 	g := func (data OMInterface, lambda float64) float64 {
 		args := data.GetX()
-		//function := data.GetFunction()
 		temp := New(len(args))
 		gradient := data.Grad()
 		for i,df_dxi := range gradient {
@@ -274,19 +270,36 @@ func (md *Mydata2) GetY() float64 {
 }
 
 func (md *Mydata2) Grad() []float64 {
+	// get current args state
 	args := md.GetX()
-	//function := md.GetFunction()
-	left := New(len(args))
-	left.SetX(args)
-	right := New(len(args))
-	right.SetX(args)
+	// left and right deviations
+	left := New2(len(args))
+	right := New2(len(args))
+	// numerical differentiation
+	//
+	// NOTE: delta ought to be small enough but you should remember 
+	//       that too small value will drive to reducing accuracy
+	//
+	// df/dxi = f(x1,x2,...,xi+/\xi,...xn) - f(x1,x2,...xi-/\xi,...xn) / (2 * /\xi) 
+	//
 	delta := 0.05
+	// vector of approx gradient of function f(x) values
 	gradient := make([]float64, len(args))
 	for i := 0; i < len(gradient); i++ {
-		left.args[i] += delta
-		right.args[i] -= delta
+		// differences
+		plus := make([]float64,len(args))
+		minus := make([]float64, len(args))
+		copy(plus, args)
+		copy(minus, args)
+		// make a diffrence 
+		plus[i] += delta
+		minus[i] -= delta
+		left.SetX(plus)
+		right.SetX(minus)
+		// calc aprox derivative
 		gradient[i] = ( left.Function() - right.Function() ) / (2.0 * delta)
 	}
+
 	return gradient
 }
 
@@ -294,8 +307,7 @@ func (md *Mydata2) Grad() []float64 {
 func (md *Mydata2) GetG() (func (data ODO, lambda float64) float64) {
 	g := func (data ODO, lambda float64) float64 {
 		args := data.GetX()
-		//function := data.GetFunction()
-		temp := New(len(args))
+		temp := New2(len(args))
 		gradient := data.Grad()
 		for i,df_dxi := range gradient {
 			temp.args[i] = args[i] - lambda * df_dxi
@@ -311,25 +323,25 @@ func (md *Mydata2) GetInterval() (float64,float64) {
 }
 // максимальное количесво приближений 
 //n int - для одномерной оптимизации
-//m int - многомерной оптимизации
 func (md *Mydata2) GetMaxIterODO() (n int) {
 	n = 100
 	return
 }
+//m int - многомерной оптимизации
 func (md *Mydata2) GetMaxIterMDO() (m int) {
 	m = 1000
 	return
 }
 // требуемая точность
 //epsilon1 float64 для метода одномерной оптимизации
-//epsilon2 float64 для метода многомерной оптимизации
 func (md *Mydata2) GetEpsilon1() float64 { return 0.01 }
+//epsilon2 float64 для метода многомерной оптимизации
 func (md *Mydata2) GetEpsilon2() float64 { return 0.01 }
 // Аргумент минимизации (для наискорейшего спуска argmin по lambda)
 // phi(x) метод одномерной оптимизаци
 func (md *Mydata2) GetF() (func(data ODO) float64) {
 	return dichotomia4
-	//4return goldensection4
+//	return goldensection4
 }
 
 
@@ -347,13 +359,19 @@ func (md *Mydata2) GetF() (func(data ODO) float64) {
 //
 func main() {
 	fmt.Println("Hello steepest descent")
+
+
+	fmt.Println(" #### [1] ####")
 	// совсем простой пример
 	//TODO: эти значения можно менять и наблюдать результат
 	var x float64 = 34.0
 	var y float64 = 12.0
 	var epsilon = 0.01
   SteepestDescent(x, y, epsilon)
+	fmt.Println()
+	fmt.Println()
 
+	fmt.Println(" #### [2] ####")
 	// уже посложней с функциями-аргументами
 	fn := func (args []float64) float64 {
 		//return x[0]*x[0] + 23.0*x[0]
@@ -361,7 +379,9 @@ func main() {
 	}
 	SteepestDescent2(fn, []float64{x,y}, epsilon)
 	fmt.Println()
+	fmt.Println()
 
+	fmt.Println(" #### [3] ####")
 	// здесь уже использованы интерфейсы и фунции высшего порядка
 	// не понятно, сложно или всё же универсально вышло?
 	mydata := New(2)
@@ -373,7 +393,10 @@ func main() {
 	}
 	fmt.Println()
 	fmt.Printf("## y: %.3f\n", mydata.GetY())
+	fmt.Println()
+	fmt.Println()
 
+	fmt.Println(" #### [4] ####")
 	// копипаста, но здесь уже использованы встроенные интерфейсы
 	mydata2 := New2(2)
 	mydata2.SetX([]float64{x,y})
@@ -384,6 +407,8 @@ func main() {
 	}
 	fmt.Println()
 	fmt.Printf("## y: %.3f\n", mydata2.GetY())
+	fmt.Println()
+	fmt.Println()
 }
 
 // Собственно здесь записывается наша функция
