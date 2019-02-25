@@ -191,8 +191,8 @@ func (md *Mydata) GetEpsilon2() float64 { return 0.01 }
 // Аргумент минимизации (для наискорейшего спуска argmin по lambda)
 // phi(x) метод одномерной оптимизаци
 func (md *Mydata) GetF() (func(data OMInterface) float64) {
-	//return dichotomia3
-	return goldensection3
+	return dichotomia3
+	//return goldensection3
 }
 
 
@@ -340,8 +340,8 @@ func (md *Mydata2) GetEpsilon2() float64 { return 0.01 }
 // Аргумент минимизации (для наискорейшего спуска argmin по lambda)
 // phi(x) метод одномерной оптимизаци
 func (md *Mydata2) GetF() (func(data ODO) float64) {
-	return dichotomia4
-//	return goldensection4
+//	return dichotomia4
+	return goldensection4
 }
 
 
@@ -700,9 +700,8 @@ func goldensection(g func(args []float64, lambda float64) float64, args []float6
 	niterations := 100
 	for k = 1; (bk - ak) >= epsilon && k < niterations; k++ {
 		// Деллим отрезок в пропрорции золотого сечения
-		left = ak + (bk - ak) * n
-		right = ak + (bk - ak) * m
-
+		left = bk*n + ak*m
+		right = ak*n + bk*m
 		// Шаг 3. Вычислить grad f(x[k])
     // Проверяем в какую часть попадает точка минимума 
 		// слева от разбиения или справа и выбираем соответствующую точку
@@ -754,8 +753,8 @@ func goldensection3(data OMInterface) float64 {
 	niterations := 100//TODO:data.GetIterMax()...
 	for k = 1; (bk - ak) >= epsilon && k < niterations; k++ {
 		// Деллим отрезок в пропрорции золотого сечения
-		left = ak + (bk - ak) * n
-		right = ak + (bk - ak) * m
+		left = bk*n + ak*m
+		right = ak*n + bk*m
 
 		// Шаг 3. Вычислить grad f(x[k])
 		// Проверяем в какую часть попадает точка минимума 
@@ -807,8 +806,8 @@ func goldensection4(data ODO) float64 {
 	niterations := 100//TODO:data.GetIterMax()...
 	for k = 1; (bk - ak) >= epsilon && k < niterations; k++ {
 		// Деллим отрезок в пропрорции золотого сечения
-		left = ak + (bk - ak) * n
-		right = ak + (bk - ak) * m
+		left = bk*n + ak*m
+		right = ak*n + bk*m
 
 		// Шаг 3. Вычислить grad f(x[k])
 		// Проверяем в какую часть попадает точка минимума 
